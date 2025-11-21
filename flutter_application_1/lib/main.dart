@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:flutter/material.dart';
 
+
 void main() {
   runApp(const Main());
 }
@@ -13,22 +14,27 @@ class Main extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       routerConfig: _router,
+      theme: ThemeData(
+        useMaterial3: true,  
+        colorScheme: ColorScheme.light(),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,  
+        colorScheme: ColorScheme.dark(),
+      ),
+      themeMode: ThemeMode.system, 
     );
   }
 }
-
 
 final GoRouter _router = GoRouter(
   routes: [
     ShellRoute(
       builder: (context, state, child) {
-        return MainShell(child: child); 
+        return MainShell(child: child);
       },
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const HomeScreen(),
-        ),
+        GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
         GoRoute(
           path: '/camera',
           builder: (context, state) => const CameraScreen(),
@@ -45,6 +51,7 @@ final GoRouter _router = GoRouter(
     ),
   ],
 );
+
 class MainShell extends StatelessWidget {
   final Widget child;
 
@@ -52,11 +59,15 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme = Theme.of(context).colorScheme;
     final String location = GoRouterState.of(context).uri.toString();
 
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: ColorScheme.surface,
+        selectedItemColor: ColorScheme.primary,
         currentIndex: _getIndex(location),
         onTap: (index) {
           switch (index) {
@@ -76,9 +87,15 @@ class MainShell extends StatelessWidget {
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Camera'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera_alt),
+            label: 'Camera',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Files'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -100,6 +117,7 @@ class HomeScreen extends StatelessWidget {
     return const Center(child: Text('Home'));
   }
 }
+
 class CameraScreen extends StatelessWidget {
   const CameraScreen({super.key});
 
@@ -126,4 +144,3 @@ class SettingsScreen extends StatelessWidget {
     return const Center(child: Text('Settings'));
   }
 }
-
