@@ -2,27 +2,33 @@ import 'package:go_router/go_router.dart';
 
 import 'package:flutter/material.dart';
 
-
 void main() {
   runApp(const Main());
 }
+
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.system);
 
 class Main extends StatelessWidget {
   const Main({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: _router,
-      theme: ThemeData(
-        useMaterial3: true,  
-        colorScheme: ColorScheme.light(),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,  
-        colorScheme: ColorScheme.dark(),
-      ),
-      themeMode: ThemeMode.system, 
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (context, currentMode, child) {
+        return MaterialApp.router(
+          routerConfig: _router,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.light(),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.dark(),
+          ),
+          themeMode: currentMode,
+        );
+      },
     );
   }
 }
@@ -109,6 +115,10 @@ class MainShell extends StatelessWidget {
   }
 }
 
+
+//EKRANY
+
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -139,8 +149,31 @@ class FilesScreen extends StatelessWidget {
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+
+
+
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Settings'));
+    return Center(
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeNotifier,
+        builder: (context, currentMode, child) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Tryb jasny/ciemny: '),
+              Switch(
+                value: currentMode == ThemeMode.dark,
+                onChanged: (isDark) {
+                  themeNotifier.value = isDark
+                      ? ThemeMode.dark
+                      : ThemeMode.light;
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
