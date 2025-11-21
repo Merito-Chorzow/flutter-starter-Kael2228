@@ -37,6 +37,7 @@ dependencies:
   http: ^1.6.0 #do komunikacji z serwerami i API
   image_picker: ^1.2.1 #wybieranie zdjęć i filmów z galeri
   path_provider: ^2.1.5 #zarządzanie plikami i przechowywanie danych
+  go_router: ^17.0.0  #routing 
 
 dev_dependencies:
   flutter_test:
