@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 void main() {
   runApp(const Main());
@@ -93,15 +95,15 @@ class MainShell extends StatelessWidget {
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Strona główna'),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera_alt),
-            label: 'Camera',
+            label: 'aparat',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'Files'),
+          BottomNavigationBarItem(icon: Icon(Icons.folder), label: 'pliki'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Settings',
+            label: 'ustawienia',
           ),
         ],
       ),
@@ -125,7 +127,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Home'));
+    return const Center(child: Text('Dziennik zdjęć'));
   }
 }
 
@@ -150,6 +152,35 @@ class _CameraScreenState extends State<CameraScreen> {
         _photo = File(image.path);
       });
     }
+  }
+
+  Future<void> _savePhoto() async {
+    if (_photo == null) return;
+
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final Directory photosDir = Directory("${appDir.path}/photos");
+
+    if (!await photosDir.exists()) {
+      await photosDir.create(recursive: true);
+    }
+
+    final String fileName =
+        "photo_${DateTime.now().millisecondsSinceEpoch}.jpg";
+    final String newPath = p.join(photosDir.path, fileName);
+
+    await _photo!.copy(newPath);
+
+    final File noteFile = File("$newPath.txt");
+    await noteFile.writeAsString(_noteController.text);
+
+    setState(() {
+      _photo = null;
+      _noteController.clear();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Zdjęcie zapisane w pamięci!")),
+    );
   }
 
   @override
@@ -178,10 +209,20 @@ class _CameraScreenState extends State<CameraScreen> {
 
             const SizedBox(height: 16),
 
-            ElevatedButton.icon(
-              onPressed: _takePhoto,
-              icon: const Icon(Icons.camera_alt),
-              label: const Text("Zrób zdjęcie"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _takePhoto,
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text("Zrób zdjęcie"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _savePhoto,
+                  icon: const Icon(Icons.save),
+                  label: const Text("Zapisz"),
+                ),
+              ],
             ),
           ],
         ),
@@ -190,20 +231,101 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 }
 
-class FilesScreen extends StatelessWidget {
+
+class FilesScreen extends StatefulWidget {
   const FilesScreen({super.key});
 
   @override
+  State<FilesScreen> createState() => _FilesScreenState();
+}
+
+class _FilesScreenState extends State<FilesScreen> {
+  List<Map<String, dynamic>> _savedFiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedPhotos();
+  }
+
+  Future<void> _loadSavedPhotos() async {
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final Directory photosDir = Directory("${appDir.path}/photos");
+
+    if (!await photosDir.exists()) {
+      setState(() => _savedFiles = []);
+      return;
+    }
+
+    final List<FileSystemEntity> files = photosDir.listSync();
+
+    List<Map<String, dynamic>> items = [];
+
+    for (var file in files) {
+      if (file.path.endsWith(".jpg")) {
+        final String imagePath = file.path;
+        final String notePath = "$imagePath.txt";
+
+        String note = "";
+        if (await File(notePath).exists()) {
+          note = await File(notePath).readAsString();
+        }
+
+        items.add({
+          "image": File(imagePath),
+          "note": note,
+        });
+      }
+    }
+
+    items = items.reversed.toList();
+
+    setState(() {
+      _savedFiles = items;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Files'));
+    return Scaffold(
+      appBar: AppBar(title: const Text("Zapisane zdjęcia")),
+      body: _savedFiles.isEmpty
+          ? const Center(child: Text("Brak zapisanych zdjęć."))
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _savedFiles.length,
+              itemBuilder: (context, index) {
+                final File image = _savedFiles[index]["image"];
+                final String note = _savedFiles[index]["note"];
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.file(image, height: 250, fit: BoxFit.cover),
+
+                        const SizedBox(height: 8),
+
+                        Text(
+                          note.isEmpty ? "(brak notatki)" : note,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
   }
 }
 
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-
-
 
   @override
   Widget build(BuildContext context) {
