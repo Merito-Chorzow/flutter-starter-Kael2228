@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
-
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 void main() {
   runApp(const Main());
@@ -128,12 +129,64 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class CameraScreen extends StatelessWidget {
+class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
 
   @override
+  State<CameraScreen> createState() => _CameraScreenState();
+}
+
+class _CameraScreenState extends State<CameraScreen> {
+  File? _photo;
+  final TextEditingController _noteController = TextEditingController();
+
+  Future<void> _takePhoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image =
+        await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+
+    if (image != null) {
+      setState(() {
+        _photo = File(image.path);
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Camera'));
+    return Scaffold(
+      appBar: AppBar(title: const Text("Camera")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Expanded(
+              child: _photo == null
+                  ? const Center(child: Text("Brak zdjęcia – zrób nowe."))
+                  : Image.file(_photo!, fit: BoxFit.cover),
+            ),
+
+            const SizedBox(height: 16),
+
+            TextField(
+              controller: _noteController,
+              decoration: const InputDecoration(
+                labelText: "Notatka do zdjęcia",
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            ElevatedButton.icon(
+              onPressed: _takePhoto,
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Zrób zdjęcie"),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
